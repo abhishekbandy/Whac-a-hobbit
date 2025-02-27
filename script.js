@@ -22,7 +22,7 @@ function peep() {
   if (gameOver) return;
 
   const hole = randomHole();
-  const time = randomTime(2000, 4000);
+  const time = randomTime(1000, 1500);
   const img = document.createElement('img');
   img.src = moleImageUrl;
   

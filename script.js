@@ -7,7 +7,7 @@ let gameOver = true;
 let timeoutId = null;
 
 // Replace with your image path
-const moleImageUrl = 'lensky.jpg';
+const moleImageUrl = '/lensky.jpg';
 
 function randomTime(min, max) {
   return Math.random() * (max - min) + min;

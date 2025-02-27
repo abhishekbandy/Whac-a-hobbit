@@ -4,7 +4,7 @@ const startButton = document.getElementById('start-button');
 const restartButton = document.getElementById('restart-button');
 let score = 0;
 let gameOver = true;
-let timeoutId = null;
+let activeMoles = new Set();
 
 // Replace with your image path
 const moleImageUrl = '/lensky.JPG';
@@ -20,39 +20,51 @@ function randomHole() {
 
 function peep() {
   if (gameOver) return;
-  
+
   const hole = randomHole();
-  const time = randomTime(1000, 1500); // 2-4 seconds
+  const time = randomTime(2000, 4000);
   const img = document.createElement('img');
   img.src = moleImageUrl;
   
   hole.appendChild(img);
   hole.classList.add('active');
-  
-  timeoutId = setTimeout(() => {
-    hole.classList.remove('active');
-    hole.removeChild(img);
+  activeMoles.add(hole);
+
+  const timeout = setTimeout(() => {
+    if (hole.classList.contains('active')) {
+      hole.classList.remove('active');
+      hole.removeChild(img);
+      activeMoles.delete(hole);
+    }
     if (!gameOver) peep();
   }, time);
+
+  // Store timeout reference on the hole
+  hole.currentTimeout = timeout;
 }
 
 function startGame() {
   if (!gameOver) return;
-  
+
   // Reset game state
   gameOver = false;
   score = 0;
   scoreDisplay.textContent = score;
-  
-  // Clear existing moles
+  activeMoles.clear();
+
+  // Clear existing moles and timeouts
   holes.forEach(hole => {
     hole.classList.remove('active');
     const img = hole.querySelector('img');
     if (img) hole.removeChild(img);
+    if (hole.currentTimeout) {
+      clearTimeout(hole.currentTimeout);
+      delete hole.currentTimeout;
+    }
   });
-  
+
   peep();
-  
+
   // Auto-end after 15 seconds
   setTimeout(() => {
     gameOver = true;
@@ -61,20 +73,35 @@ function startGame() {
 }
 
 function restartGame() {
-  clearTimeout(timeoutId);
   gameOver = true;
+  holes.forEach(hole => {
+    if (hole.currentTimeout) {
+      clearTimeout(hole.currentTimeout);
+      delete hole.currentTimeout;
+    }
+  });
   setTimeout(startGame, 100);
 }
 
 function whack(e) {
   if (!e.isTrusted || gameOver) return;
-  
+
+  const hole = e.currentTarget;
+  if (!hole.classList.contains('active')) return;
+
+  // Clear the timeout when manually whacked
+  clearTimeout(hole.currentTimeout);
+  delete hole.currentTimeout;
+
   score++;
   scoreDisplay.textContent = score;
-  const hole = e.currentTarget;
   hole.classList.remove('active');
   const img = hole.querySelector('img');
   if (img) hole.removeChild(img);
+  activeMoles.delete(hole);
+
+  // Immediately spawn new mole
+  if (!gameOver) peep();
 }
 
 // Event listeners
